@@ -40,9 +40,12 @@ const BulkUpload: React.FC = () => {
   };
 
   const parseCSV = (file: File) => {
+    // First try Papa Parse
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
+      dynamicTyping: false,
+      transform: (value: string) => value.trim(),
       error: (error: any) => {
         console.error('CSV parsing error:', error);
         setError(`Error parsing CSV: ${error.message}`);
@@ -51,6 +54,13 @@ const BulkUpload: React.FC = () => {
         console.log('CSV parsing results:', results);
         console.log('Total rows:', results.data.length);
         console.log('Errors:', results.errors);
+        
+        // If Papa Parse only got 2 rows, try manual parsing
+        if (results.data.length <= 2) {
+          console.log('Papa Parse got too few rows, trying manual parsing...');
+          parseCSVManually(file);
+          return;
+        }
         
         // Filter out invalid rows and clean data
         const students = results.data
@@ -102,6 +112,61 @@ const BulkUpload: React.FC = () => {
         }
       }
     });
+  };
+
+  // Fallback manual CSV parsing
+  const parseCSVManually = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      const lines = content.split('\n');
+      
+      console.log('Manual parsing - Total lines:', lines.length);
+      
+      // Skip header and placeholder row
+      const dataLines = lines.slice(2).filter(line => line.trim() !== '');
+      console.log('Manual parsing - Data lines:', dataLines.length);
+      
+      const students: StudentData[] = [];
+      
+      dataLines.forEach((line, index) => {
+        try {
+          // Split by comma, but handle quoted fields
+          const fields = line.split(',').map(field => field.trim());
+          
+          if (fields.length >= 7) {
+            const student: StudentData = {
+              rollNumber: fields[0],
+              collegeEmail: fields[1],
+              name: fields[2],
+              personalEmail: fields[3],
+              year: fields[4] || '2',
+              section: fields[5] || 'A',
+              department: fields[6] || 'CSE',
+              leetcodeId: fields[7] || undefined,
+              leetcodeContestId: fields[8] || undefined,
+              codechefId: fields[9] || undefined,
+              codeforcesId: fields[10] || undefined,
+              otherIds: fields[11] ? JSON.parse(fields[11]) : undefined
+            };
+            
+            // Validate required fields
+            if (student.rollNumber && student.rollNumber !== 'REG NO' && 
+                student.collegeEmail && student.name) {
+              students.push(student);
+            }
+          }
+        } catch (error) {
+          console.log(`Error parsing line ${index + 3}:`, error);
+        }
+      });
+      
+      console.log('Manual parsing - Valid students:', students.length);
+      setPreview(students);
+      setError('');
+    };
+    
+    reader.readAsText(file);
   };
 
   const handleUpload = async () => {
