@@ -813,7 +813,7 @@ app.get('/api/admin/export-students', async (req, res) => {
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
-const port = process.env.PORT || 4000;
+const port = process.env.PORT || 4001;
 
 // Better error handling for server startup
 async function startServer() {

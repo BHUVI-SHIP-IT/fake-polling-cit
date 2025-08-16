@@ -8,12 +8,12 @@ export default defineConfig({
     exclude: ['lucide-react'],
   },
   server: {
-    proxy: {
-      '/api': {
-        target: process.env.VITE_API_URL || 'http://localhost:4000',
-        changeOrigin: true,
-      },
-    },
+            proxy: {
+          '/api': {
+            target: process.env.VITE_API_URL || 'http://localhost:4001',
+            changeOrigin: true,
+          },
+        },
   },
   build: {
     outDir: 'dist',
