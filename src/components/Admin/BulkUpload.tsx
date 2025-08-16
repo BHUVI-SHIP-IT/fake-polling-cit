@@ -4,6 +4,7 @@ import Papa from 'papaparse';
 interface StudentData {
   rollNumber: string;
   collegeEmail: string;
+  name: string;
   personalEmail: string;
   year: string;
   section: string;
@@ -81,9 +82,9 @@ const BulkUpload: React.FC = () => {
   };
 
   const downloadTemplate = () => {
-    const template = `rollNumber,collegeEmail,personalEmail,year,section,department,leetcodeId,leetcodeContestId,codechefId,codeforcesId,otherIds
-21CS001,student1@college.edu,student1@personal.com,3,A,Computer Science,student1_lc,student1_contest,student1_cc,student1_cf,"[{""platform"":""HackerRank"",""id"":""student1_hr""}]"
-21CS002,student2@college.edu,student2@personal.com,3,A,Computer Science,student2_lc,student2_contest,student2_cc,student2_cf,"[{""platform"":""AtCoder"",""id"":""student2_at""}]"`;
+    const template = `rollNumber,collegeEmail,name,personalEmail,year,section,department,leetcodeId,leetcodeContestId,codechefId,codeforcesId,otherIds
+21CS001,student1@college.edu,John Doe,student1@personal.com,3,A,Computer Science,student1_lc,student1_contest,student1_cc,student1_cf,"[{""platform"":""HackerRank"",""id"":""student1_hr""}]"
+21CS002,student2@college.edu,Jane Smith,student2@personal.com,3,A,Computer Science,student2_lc,student2_contest,student2_cc,student2_cf,"[{""platform"":""AtCoder"",""id"":""student2_at""}]"`;
 
     const blob = new Blob([template], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -149,6 +150,7 @@ const BulkUpload: React.FC = () => {
                 <thead>
                   <tr className="bg-gray-50">
                     <th className="px-3 py-2 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Roll</th>
+                    <th className="px-3 py-2 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                     <th className="px-3 py-2 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">College Email</th>
                     <th className="px-3 py-2 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
                     <th className="px-3 py-2 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Section</th>
@@ -156,19 +158,20 @@ const BulkUpload: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {preview.slice(0, 5).map((student, index) => (
+                  {preview.slice(0, 10).map((student, index) => (
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="px-3 py-2 border-b text-sm text-gray-900">{student.rollNumber}</td>
+                      <td className="px-3 py-2 border-b text-sm text-gray-900">{student.name}</td>
                       <td className="px-3 py-2 border-b text-sm text-gray-900">{student.collegeEmail}</td>
                       <td className="px-3 py-2 border-b text-sm text-gray-900">{student.year}</td>
                       <td className="px-3 py-2 border-b text-sm text-gray-900">{student.section}</td>
                       <td className="px-3 py-2 border-b text-sm text-gray-900">{student.department}</td>
                     </tr>
                   ))}
-                  {preview.length > 5 && (
+                  {preview.length > 10 && (
                     <tr>
-                      <td colSpan={5} className="px-3 py-2 text-sm text-gray-500 text-center">
-                        ... and {preview.length - 5} more students
+                      <td colSpan={6} className="px-3 py-2 text-sm text-gray-500 text-center">
+                        ... and {preview.length - 10} more students
                       </td>
                     </tr>
                   )}
