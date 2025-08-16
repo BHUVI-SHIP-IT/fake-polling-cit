@@ -694,63 +694,78 @@ app.post('/api/admin/import-students', async (req, res) => {
 			rollNumber: z.string(),
 			collegeEmail: z.string().email(),
 			name: z.string(),
-			personalEmail: z.string().email(),
+			personalEmail: z.string().optional().or(z.literal('')),
 			year: z.string(),
 			section: z.string(),
 			department: z.string(),
-			leetcodeId: z.string().optional(),
-			leetcodeContestId: z.string().optional(),
-			codechefId: z.string().optional(),
-			codeforcesId: z.string().optional(),
-			otherIds: z.array(z.object({ platform: z.string(), id: z.string() })).optional()
+			leetcodeId: z.string().optional().or(z.literal('')),
+			leetcodeContestId: z.string().optional().or(z.literal('')),
+			codechefId: z.string().optional().or(z.literal('')),
+			codeforcesId: z.string().optional().or(z.literal('')),
+			otherIds: z.any().optional()
 		}))
 	});
 	
-	try {
-		const { students } = schema.parse(req.body);
-		const results = { success: 0, failed: 0, errors: [] as string[] };
-		
-		for (const studentData of students) {
 			try {
-				// Check if user already exists
-				const existingUser = await prisma.user.findUnique({ where: { email: studentData.collegeEmail } });
-				if (existingUser) {
-					results.failed++;
-					results.errors.push(`User ${studentData.collegeEmail} already exists`);
-					continue;
-				}
-				
-				// Create user with default password
-				const defaultPassword = await bcrypt.hash('Student@123', 10);
-				const user = await prisma.user.create({
-					data: { email: studentData.collegeEmail, passwordHash: defaultPassword, type: 'student' }
-				});
-				
-				// Create student
-				const student = await prisma.student.create({
-					data: {
-						userId: user.id,
-						name: studentData.name,
-						rollNumber: studentData.rollNumber,
-						personalEmail: studentData.personalEmail,
-						year: studentData.year,
-						section: studentData.section,
-						department: studentData.department,
-						leetcodeId: studentData.leetcodeId || undefined,
-						leetcodeContestId: studentData.leetcodeContestId || undefined,
-						codechefId: studentData.codechefId || undefined,
-						codeforcesId: studentData.codeforcesId || undefined,
-						otherIds: studentData.otherIds || undefined
+			const { students } = schema.parse(req.body);
+			const results = { success: 0, failed: 0, errors: [] as string[] };
+			
+			console.log(`Backend received ${students.length} students for import`);
+			
+						for (const studentData of students) {
+				try {
+					// Clean data - convert empty strings to undefined
+					const cleanData = {
+						...studentData,
+						personalEmail: studentData.personalEmail === '' ? undefined : studentData.personalEmail,
+						leetcodeId: studentData.leetcodeId === '' ? undefined : studentData.leetcodeId,
+						leetcodeContestId: studentData.leetcodeContestId === '' ? undefined : studentData.leetcodeContestId,
+						codechefId: studentData.codechefId === '' ? undefined : studentData.codechefId,
+						codeforcesId: studentData.codeforcesId === '' ? undefined : studentData.codeforcesId,
+						otherIds: studentData.otherIds === '' ? undefined : studentData.otherIds
+					};
+					
+					console.log(`Processing student: ${cleanData.rollNumber} - ${cleanData.name}`);
+					
+					// Check if user already exists
+					const existingUser = await prisma.user.findUnique({ where: { email: cleanData.collegeEmail } });
+					if (existingUser) {
+						results.failed++;
+						results.errors.push(`User ${cleanData.collegeEmail} already exists`);
+						continue;
 					}
-				});
+					
+					// Create user with default password
+					const defaultPassword = await bcrypt.hash('Student@123', 10);
+					const user = await prisma.user.create({
+						data: { email: cleanData.collegeEmail, passwordHash: defaultPassword, type: 'student' }
+					});
+					
+					// Create student
+					const student = await prisma.student.create({
+						data: {
+							userId: user.id,
+							name: cleanData.name,
+							rollNumber: cleanData.rollNumber,
+							personalEmail: cleanData.personalEmail,
+							year: cleanData.year,
+							section: cleanData.section,
+							department: cleanData.department,
+							leetcodeId: cleanData.leetcodeId,
+							leetcodeContestId: cleanData.leetcodeContestId,
+							codechefId: cleanData.codechefId,
+							codeforcesId: cleanData.codeforcesId,
+							otherIds: cleanData.otherIds
+						}
+					});
 				
-				// Ensure class exists and map student
-				const klass = await prisma.class.upsert({
-					where: { year_section_department: { year: studentData.year, section: studentData.section, department: studentData.department } },
-					create: { year: studentData.year, section: studentData.section, department: studentData.department },
-					update: {}
-				});
-				await prisma.studentClass.create({ data: { studentId: student.id, classId: klass.id } });
+									// Ensure class exists and map student
+					const klass = await prisma.class.upsert({
+						where: { year_section_department: { year: cleanData.year, section: cleanData.section, department: cleanData.department } },
+						create: { year: cleanData.year, section: cleanData.section, department: cleanData.department },
+						update: {}
+					});
+					await prisma.studentClass.create({ data: { studentId: student.id, classId: klass.id } });
 				
 				results.success++;
 			} catch (e: any) {

@@ -129,37 +129,52 @@ const BulkUpload: React.FC = () => {
       
       const students: StudentData[] = [];
       
-      dataLines.forEach((line, index) => {
-        try {
-          // Split by comma, but handle quoted fields
-          const fields = line.split(',').map(field => field.trim());
-          
-          if (fields.length >= 7) {
-            const student: StudentData = {
-              rollNumber: fields[0],
-              collegeEmail: fields[1],
-              name: fields[2],
-              personalEmail: fields[3],
-              year: fields[4] || '2',
-              section: fields[5] || 'A',
-              department: fields[6] || 'CSE',
-              leetcodeId: fields[7] || undefined,
-              leetcodeContestId: fields[8] || undefined,
-              codechefId: fields[9] || undefined,
-              codeforcesId: fields[10] || undefined,
-              otherIds: fields[11] ? JSON.parse(fields[11]) : undefined
-            };
+              dataLines.forEach((line, index) => {
+          try {
+            // Split by comma, but handle quoted fields
+            const fields = line.split(',').map(field => field.trim());
             
-            // Validate required fields
-            if (student.rollNumber && student.rollNumber !== 'REG NO' && 
-                student.collegeEmail && student.name) {
-              students.push(student);
+            if (fields.length >= 7) {
+              const student: StudentData = {
+                rollNumber: fields[0] || '',
+                collegeEmail: fields[1] || '',
+                name: fields[2] || '',
+                personalEmail: fields[3] || '',
+                year: fields[4] || '2',
+                section: fields[5] || 'A',
+                department: fields[6] || 'CSE',
+                leetcodeId: fields[7] || undefined,
+                leetcodeContestId: fields[8] || undefined,
+                codechefId: fields[9] || undefined,
+                codeforcesId: fields[10] || undefined,
+                otherIds: fields[11] ? (() => {
+                  try {
+                    return JSON.parse(fields[11]);
+                  } catch (error) {
+                    console.log(`Warning: Invalid JSON in otherIds for line ${index + 3}:`, fields[11]);
+                    return undefined;
+                  }
+                })() : undefined
+              };
+              
+              // Validate required fields
+              if (student.rollNumber && student.rollNumber !== 'REG NO' && 
+                  student.rollNumber.trim() !== '' &&
+                  student.collegeEmail && student.collegeEmail.trim() !== '' &&
+                  student.name && student.name.trim() !== '') {
+                students.push(student);
+                console.log(`Successfully parsed student: ${student.rollNumber} - ${student.name}`);
+              } else {
+                console.log(`Skipping invalid student data at line ${index + 3}:`, student);
+              }
+            } else {
+              console.log(`Skipping line ${index + 3} - insufficient fields (${fields.length}):`, line);
             }
+          } catch (error) {
+            console.log(`Error parsing line ${index + 3}:`, error);
+            console.log(`Line content:`, line);
           }
-        } catch (error) {
-          console.log(`Error parsing line ${index + 3}:`, error);
-        }
-      });
+        });
       
       console.log('Manual parsing - Valid students:', students.length);
       setPreview(students);
