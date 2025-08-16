@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  type         UserType
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  faculty      Faculty?
+  student      Student?
+}
+
+model Student {
+  id                String         @id @default(cuid())
+  userId            String         @unique
+  name              String         // Added student name field
+  rollNumber        String         @unique
+  personalEmail     String
+  year              String
+  section           String
+  department        String
+  leetcodeId        String?
+  leetcodeContestId String?
+  codechefId        String?
+  codeforcesId      String?
+  otherIds          Json?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  pollResponses     PollResponse[]
+  user              User           @relation(fields: [userId], references: [id])
+  classes           StudentClass[]
+}
+
+model Faculty {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  name            String
+  phoneNumber     String
+  designation     String
+  handlingClasses Json
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id])
+  polls           Poll[]
+}
+
+model Class {
+  id         String         @id @default(cuid())
+  year       String
+  section    String
+  department String
+  polls      Poll[]
+  students   StudentClass[]
+
+  @@unique([year, section, department])
+}
+
+model StudentClass {
+  id        String  @id @default(cuid())
+  studentId String
+  classId   String
+  class     Class   @relation(fields: [classId], references: [id])
+  student   Student @relation(fields: [studentId], references: [id])
+
+  @@unique([studentId, classId])
+}
+
+model Poll {
+  id          String         @id @default(cuid())
+  facultyId   String
+  title       String
+  description String?
+  questions   Json
+  classId     String
+  isActive    Boolean        @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime       @default(now())
+  class       Class          @relation(fields: [classId], references: [id])
+  faculty     Faculty        @relation(fields: [facultyId], references: [id])
+  responses   PollResponse[]
+}
+
+model PollResponse {
+  id          String   @id @default(cuid())
+  pollId      String
+  studentId   String
+  answers     Json
+  isFlagged   Boolean  @default(false)
+  flagReason  String?
+  submittedAt DateTime @default(now())
+  poll        Poll     @relation(fields: [pollId], references: [id])
+  student     Student  @relation(fields: [studentId], references: [id])
+}
+
+enum UserType {
+  student
+  faculty
+}

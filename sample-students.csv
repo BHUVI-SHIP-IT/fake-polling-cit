@@ -1,0 +1,11 @@
+rollNumber,collegeEmail,personalEmail,year,section,department,leetcodeId,leetcodeContestId,codechefId,codeforcesId,otherIds
+21CS001,student1@college.edu,student1@personal.com,3,A,Computer Science,student1_lc,student1_contest,student1_cc,student1_cf,"[{""platform"":""HackerRank"",""id"":""student1_hr""}]"
+21CS002,student2@college.edu,student2@personal.com,3,A,Computer Science,student2_lc,student2_contest,student2_cc,student2_cf,"[{""platform"":""AtCoder"",""id"":""student2_at""}]"
+21CS003,student3@college.edu,student3@personal.com,3,A,Computer Science,student3_lc,student3_contest,student3_cc,student3_cf,
+21CS004,student4@college.edu,student4@personal.com,3,A,Computer Science,student4_lc,student4_contest,student4_cc,student4_cf,
+21CS005,student5@college.edu,student5@personal.com,3,A,Computer Science,student5_lc,student5_contest,student5_cc,student5_cf,
+21CS006,student6@college.edu,student6@personal.com,3,B,Computer Science,student6_lc,student6_contest,student6_cc,student6_cf,
+21CS007,student7@college.edu,student7@personal.com,3,B,Computer Science,student7_lc,student7_contest,student7_cc,student7_cf,
+21CS008,student8@college.edu,student8@personal.com,3,B,Computer Science,student8_lc,student8_contest,student8_cc,student8_cf,
+21CS009,student9@college.edu,student9@personal.com,3,B,Computer Science,student9_lc,student9_contest,student9_cc,student9_cf,
+21CS010,student10@college.edu,student10@personal.com,3,B,Computer Science,student10_lc,student10_contest,student10_cc,student10_cf, 
