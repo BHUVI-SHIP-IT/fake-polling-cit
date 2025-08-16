@@ -42,8 +42,33 @@ const BulkUpload: React.FC = () => {
   const parseCSV = (file: File) => {
     Papa.parse(file, {
       header: true,
+      skipEmptyLines: true,
       complete: (results: any) => {
-        const students = results.data as StudentData[];
+        console.log('CSV parsing results:', results);
+        
+        // Filter out invalid rows and clean data
+        const students = results.data
+          .filter((row: any) => 
+            row.rollNumber && 
+            row.rollNumber !== 'REG NO' && 
+            row.rollNumber.trim() !== '' &&
+            row.collegeEmail && 
+            row.collegeEmail.trim() !== '' &&
+            row.name && 
+            row.name.trim() !== ''
+          )
+          .map((row: any) => ({
+            ...row,
+            rollNumber: row.rollNumber.trim(),
+            collegeEmail: row.collegeEmail.trim(),
+            name: row.name.trim(),
+            personalEmail: row.personalEmail?.trim() || '',
+            year: row.year?.trim() || '2',
+            section: row.section?.trim() || 'A',
+            department: row.department?.trim() || 'CSE'
+          })) as StudentData[];
+        
+        console.log('Filtered students:', students);
         setPreview(students);
         setError('');
       },
