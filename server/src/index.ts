@@ -785,6 +785,29 @@ app.get('/api/admin/export-students', async (req, res) => {
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
 const port = process.env.PORT || 4000;
-app.listen(port, () => {
+
+// Better error handling for server startup
+const server = app.listen(port, () => {
 	console.log(`Server listening on http://localhost:${port}`);
+	console.log('Environment:', {
+		NODE_ENV: process.env.NODE_ENV,
+		PORT: process.env.PORT,
+		DATABASE_URL: process.env.DATABASE_URL ? 'SET' : 'MISSING',
+		JWT_SECRET: process.env.JWT_SECRET ? 'SET' : 'MISSING'
+	});
+});
+
+// Handle server errors
+server.on('error', (error) => {
+	console.error('Server error:', error);
+	process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+	console.log('SIGTERM received, shutting down gracefully');
+	server.close(() => {
+		console.log('Server closed');
+		process.exit(0);
+	});
 }); 
