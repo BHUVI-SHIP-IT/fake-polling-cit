@@ -43,37 +43,63 @@ const BulkUpload: React.FC = () => {
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
+      error: (error: any) => {
+        console.error('CSV parsing error:', error);
+        setError(`Error parsing CSV: ${error.message}`);
+      },
       complete: (results: any) => {
         console.log('CSV parsing results:', results);
+        console.log('Total rows:', results.data.length);
+        console.log('Errors:', results.errors);
         
         // Filter out invalid rows and clean data
         const students = results.data
-          .filter((row: any) => 
-            row.rollNumber && 
-            row.rollNumber !== 'REG NO' && 
-            row.rollNumber.trim() !== '' &&
-            row.collegeEmail && 
-            row.collegeEmail.trim() !== '' &&
-            row.name && 
-            row.name.trim() !== ''
-          )
-          .map((row: any) => ({
-            ...row,
-            rollNumber: row.rollNumber.trim(),
-            collegeEmail: row.collegeEmail.trim(),
-            name: row.name.trim(),
-            personalEmail: row.personalEmail?.trim() || '',
-            year: row.year?.trim() || '2',
-            section: row.section?.trim() || 'A',
-            department: row.department?.trim() || 'CSE'
-          })) as StudentData[];
+          .filter((row: any) => {
+            // Check if row has required fields
+            const hasRequiredFields = row.rollNumber && 
+              row.rollNumber !== 'REG NO' && 
+              row.rollNumber.trim() !== '' &&
+              row.collegeEmail && 
+              row.collegeEmail.trim() !== '' &&
+              row.name && 
+              row.name.trim() !== '';
+            
+            if (!hasRequiredFields) {
+              console.log('Filtered out row:', row);
+            }
+            
+            return hasRequiredFields;
+          })
+          .map((row: any) => {
+            // Clean and validate data
+            const cleanedRow = {
+              rollNumber: row.rollNumber.trim(),
+              collegeEmail: row.collegeEmail.trim(),
+              name: row.name.trim(),
+              personalEmail: row.personalEmail?.trim() || '',
+              year: row.year?.trim() || '2',
+              section: row.section?.trim() || 'A',
+              department: row.department?.trim() || 'CSE',
+              leetcodeId: row.leetcodeId?.trim() || undefined,
+              leetcodeContestId: row.leetcodeContestId?.trim() || undefined,
+              codechefId: row.codechefId?.trim() || undefined,
+              codeforcesId: row.codeforcesId?.trim() || undefined,
+              otherIds: row.otherIds ? row.otherIds : undefined
+            };
+            
+            console.log('Cleaned row:', cleanedRow);
+            return cleanedRow;
+          }) as StudentData[];
         
+        console.log('Filtered students count:', students.length);
         console.log('Filtered students:', students);
-        setPreview(students);
-        setError('');
-      },
-      error: (error: any) => {
-        setError(`Error parsing CSV: ${error.message}`);
+        
+        if (students.length === 0) {
+          setError('No valid student data found in CSV. Please check the file format.');
+        } else {
+          setPreview(students);
+          setError('');
+        }
       }
     });
   };
