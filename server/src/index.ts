@@ -813,7 +813,7 @@ app.get('/api/admin/export-students', async (req, res) => {
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
-const port = 4001; // Force port 4001 to avoid conflicts
+const port = 5000; // Force port 5000 to avoid all conflicts
 
 // Better error handling for server startup
 async function startServer() {
