@@ -1,0 +1,12 @@
+{
+  "build": {
+    "builder": "nixpacks",
+    "buildCommand": "cd server && npm run build",
+    "installCommand": "cd server && npm ci"
+  },
+  "deploy": {
+    "startCommand": "cd server && npm start",
+    "healthcheckPath": "/api/health",
+    "healthcheckTimeout": 300
+  }
+} 
