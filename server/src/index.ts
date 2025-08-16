@@ -10,9 +10,35 @@ import XLSX from 'xlsx';
 import { FakePollDetector } from './verification';
 import { createEmailService } from './emailService';
 
+// Add startup logging
+console.log('🚀 Starting server...');
+console.log('📋 Environment check:', {
+    NODE_ENV: process.env.NODE_ENV,
+    PORT: process.env.PORT,
+    DATABASE_URL: process.env.DATABASE_URL ? 'SET' : 'MISSING',
+    JWT_SECRET: process.env.JWT_SECRET ? 'SET' : 'MISSING'
+});
+
 const app = express();
 const prisma = new PrismaClient();
 const emailService = createEmailService();
+
+// Test database connection
+async function testDatabaseConnection() {
+    try {
+        console.log('🔌 Testing database connection...');
+        await prisma.$connect();
+        console.log('✅ Database connected successfully!');
+        
+        // Test a simple query
+        const userCount = await prisma.user.count();
+        console.log(`📊 Database has ${userCount} users`);
+        
+    } catch (error) {
+        console.error('❌ Database connection failed:', error);
+        throw error;
+    }
+}
 
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
@@ -72,6 +98,7 @@ app.post('/api/auth/register/student', async (req, res) => {
 		const student = await prisma.student.create({
 			data: {
 				userId: user.id,
+				name: `Student ${data.rollNumber}`, // Add default name
 				rollNumber: data.rollNumber,
 				personalEmail: data.personalEmail,
 				year: data.year,
@@ -551,9 +578,11 @@ app.get('/api/faculty/polls/:pollId/export', authMiddleware(['faculty']), async 
 			};
 			
 			// Send email notification (async - don't wait for it)
+					if (emailService) {
 			emailService.sendFakePollerNotification(notification, buf).catch(error => {
 				console.error('Failed to send email notification:', error);
 			});
+		}
 			
 			console.log(`Email notification sent to ${facultyUser.email} for ${fakeRows.length} fake pollers`);
 		} catch (error) {
@@ -638,7 +667,7 @@ app.post('/api/faculty/polls/:pollId/notify', authMiddleware(['faculty']), async
 		};
 		
 		// Send email
-		const emailSent = await emailService.sendFakePollerNotification(notification, buf);
+		const emailSent = emailService ? await emailService.sendFakePollerNotification(notification, buf) : false;
 		
 		if (emailSent) {
 			return res.json({ 
@@ -787,27 +816,44 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }));
 const port = process.env.PORT || 4000;
 
 // Better error handling for server startup
-const server = app.listen(port, () => {
-	console.log(`Server listening on http://localhost:${port}`);
-	console.log('Environment:', {
-		NODE_ENV: process.env.NODE_ENV,
-		PORT: process.env.PORT,
-		DATABASE_URL: process.env.DATABASE_URL ? 'SET' : 'MISSING',
-		JWT_SECRET: process.env.JWT_SECRET ? 'SET' : 'MISSING'
-	});
-});
+async function startServer() {
+    try {
+        // Test database connection first
+        await testDatabaseConnection();
+        
+        // Start server
+        const server = app.listen(port, () => {
+            console.log(`✅ Server listening on http://localhost:${port}`);
+            console.log('📋 Environment:', {
+                NODE_ENV: process.env.NODE_ENV,
+                PORT: process.env.PORT,
+                DATABASE_URL: process.env.DATABASE_URL ? 'SET' : 'MISSING',
+                JWT_SECRET: process.env.JWT_SECRET ? 'SET' : 'MISSING'
+            });
+        });
 
-// Handle server errors
-server.on('error', (error) => {
-	console.error('Server error:', error);
-	process.exit(1);
-});
+        // Handle server errors
+        server.on('error', (error) => {
+            console.error('❌ Server error:', error);
+            process.exit(1);
+        });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-	console.log('SIGTERM received, shutting down gracefully');
-	server.close(() => {
-		console.log('Server closed');
-		process.exit(0);
-	});
-}); 
+        // Graceful shutdown
+        process.on('SIGTERM', () => {
+            console.log('🔄 SIGTERM received, shutting down gracefully');
+            server.close(() => {
+                console.log('✅ Server closed');
+                process.exit(0);
+            });
+        });
+        
+    } catch (error) {
+        console.error('❌ Failed to start server:', error);
+        process.exit(1);
+    }
+}
+
+// Start the server
+startServer();
+
+ 
